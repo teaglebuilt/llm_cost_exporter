@@ -124,6 +124,36 @@ async fn run_metrics_server(registry: Registry) -> Result<(), std::io::Error> {
     Ok(())
 }
 
+async fn create_bedrock_client(config: &BedrockConfig) -> aws_sdk_bedrockruntime::Client {
+    let shared_config = aws_config::load_from_env().await;
+    
+    if config.assume_role.enabled {
+        let sts_client = aws_sdk_sts::Client::new(&shared_config);
+        let assumed_role = sts_client.assume_role()
+            .role_arn(&config.assume_role.role_arn)
+            .role_session_name(&config.assume_role.session_name)
+            .send()
+            .await
+            .unwrap();
+        
+        let creds = aws_credential_types::Credentials::new(
+            assumed_role.credentials.access_key_id.unwrap(),
+            assumed_role.credentials.secret_access_key.unwrap(),
+            assumed_role.credentials.session_token,
+            None,
+            "assumed-role",
+        );
+        
+        let config = aws_sdk_bedrockruntime::config::Builder::from(&shared_config)
+            .credentials_provider(creds)
+            .build();
+            
+        aws_sdk_bedrockruntime::Client::from_conf(config)
+    } else {
+        aws_sdk_bedrockruntime::Client::new(&shared_config)
+    }
+}
+
 #[tokio::main]
 async fn main() {
     // Initialize monitors

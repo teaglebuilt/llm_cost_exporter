@@ -18,7 +18,19 @@ Obvisouly, this is a prometheus exporter so make sure you have prometheus up and
 To understand how to set this up on kubernetes beyond the basic helm installation, then refer to this example for [Cost Alerting on Kubernetes](./examples/k8s-cost-alerting/README.md)
 
 **Installing helm chart**
-
+ 
+* `OpenAI`
+     ```
+    helm upgrade --install llm-cost-monitor ./chart \
+      --namespace ${NAMESPACE} \
+      --set providers.openai.secretName=openai-api-secret
+    ```
+* `Anthropic`
+    ```
+    helm upgrade --install llm-cost-monitor ./chart \
+      --namespace ${NAMESPACE} \
+      --set providers.anthropic secretName=anthropic-api-secret
+    ```
 * `AWS Bedrock`
 
   - with credentials
