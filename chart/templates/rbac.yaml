@@ -1,0 +1,22 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: llm-cost-monitor
+rules:
+- apiGroups: [ "" ]
+  resources: [ "pods" ]
+  verbs: [ "get", "list", "watch" ]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: llm-cost-monitor
+subjects:
+- kind: ServiceAccount
+  name: llm-cost-monitor-sa
+  namespace: default
+roleRef:
+  kind: ClusterRole
+  name: llm-cost-monitor
+  apiGroup: rbac.authorization.k8s.io

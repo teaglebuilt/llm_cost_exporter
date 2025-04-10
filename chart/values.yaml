@@ -1,0 +1,71 @@
+replicaCount: 1
+
+image:
+  repository: teaglebuilt/llm-cost-monitor-exporter
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+service:
+  type: ClusterIP
+  port: 8000
+  annotations: {}
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podSecurityContext: {} # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+resources: {}
+  # limits:
+  #   cpu: 200m
+  #   memory: 256Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+providers:
+  openai:
+    enabled: true
+    apiKey: "llm-secrets"
+
+  anthropic:
+    enabled: true
+    apiKey: "llm-secrets"
+
+  bedrock:
+    enabled: true
+    iamRoleArn: "arn:aws:iam::YOUR_ACCOUNT_ID:role/llm-cost-monitor-role"
+
+monitoring:
+  enabled: true
+  prometheusOperator: true
+  scrapeInterval: 30s
+  scrapeTimeout: 10s
+  labels: {}
+  annotations: {}
+
+alerts:
+  enabled: true
+  costThreshold: 100
+  requestRateThreshold: 100
+
+secrets:
+  create: true
+  annotations: {}

@@ -1,0 +1,28 @@
+{{- if .Values.alerts.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "llm-cost-monitor.fullname" . }}-rules
+  labels:
+    {{- include "llm-cost-monitor.labels" . | nindent 4 }}
+spec:
+  groups:
+  - name: llm-cost-monitor
+    rules:
+    - alert: HighLLMCost
+      expr: sum by (provider) (llm_cost_usd) > {{ .Values.alerts.costThreshold }}
+      for: 1h
+      labels:
+        severity: warning
+      annotations:
+        summary: "High LLM cost for {{ "{{ $labels.provider }}" }}"
+        description: "Current cost is {{ "{{ $value }}" }} USD"
+    
+    - alert: RateLimitApproaching
+      expr: rate(llm_requests_total[5m]) > {{ .Values.alerts.requestRateThreshold }}
+      for: 10m
+      labels:
+        severity: warning
+      annotations:
+        summary: "High request rate to LLM APIs"
+{{- end }}

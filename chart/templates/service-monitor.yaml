@@ -1,0 +1,25 @@
+---
+{{- if .Values.monitoring.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "llm-cost-monitor.fullname" . }}
+  labels:
+    {{- include "llm-cost-monitor.labels" . | nindent 4 }}
+    {{- with .Values.monitoring.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  annotations:
+    {{- with .Values.monitoring.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "llm-cost-monitor.selectorLabels" . | nindent 6 }}
+  endpoints:
+  - port: http
+    interval: {{ .Values.monitoring.scrapeInterval }}
+    scrapeTimeout: {{ .Values.monitoring.scrapeTimeout }}
+    path: /metrics
+{{- end }}
