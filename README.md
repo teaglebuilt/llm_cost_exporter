@@ -17,6 +17,26 @@ Obvisouly, this is a prometheus exporter so make sure you have prometheus up and
 
 To understand how to set this up on kubernetes beyond the basic helm installation, then refer to this example for [Cost Alerting on Kubernetes](./examples/k8s-cost-alerting/README.md)
 
+**Installing helm chart**
+
+* `AWS Bedrock`
+
+  - with credentials
+    ```
+    helm upgrade --install llm-cost-monitor ./llm-cost-monitor \
+      --namespace llm-monitoring \
+      --set providers.bedrock.credentials.enabled=true \
+      --set providers.bedrock.credentials.aws_access_key_id=$AWS_ACCESS_KEY_ID \
+      --set providers.bedrock.credentials.aws_secret_access_key=$AWS_SECRET_ACCESS_KEY
+    ```
+  - with multiple accounts
+    ```
+    helm upgrade --install llm-cost-monitor ./chart \
+      --namespace llm-monitoring \
+      --set providers.bedrock.enabled=true \
+      --set providers.bedrock.iam.roleArn=arn:aws:iam::123456789012:role/bedrock-access-role
+    ```
+
 #### Running with Docker
 
 Feel free to use the [Compose Stack Example](./examples/compose-stack/README.md) for a live local example

@@ -50,8 +50,14 @@ providers:
     apiKey: "llm-secrets"
 
   bedrock:
-    enabled: true
-    iamRoleArn: "arn:aws:iam::YOUR_ACCOUNT_ID:role/llm-cost-monitor-role"
+    assumeRole:
+      enabled: true
+      roleArn: "arn:aws:iam::TARGET_ACCOUNT:role/TARGET_ROLE"
+      sessionName: "llm-cost-exporter"
+    credentials:
+      enabled: false
+      aws_access_key_id: "***"
+      aws_secret_access_key: "***"
 
 monitoring:
   enabled: true
