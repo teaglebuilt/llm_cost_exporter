@@ -1,9 +1,13 @@
+mod providers;
+
 use anyhow::Context;
 use async_trait::async_trait;
-use prometheus::{opts, Encoder, GaugeVec, Registry, TextEncoder};
+use prometheus::{opts, Encoder, Gauge, GaugeVec, Registry, TextEncoder};
 use std::time::Duration;
 use thiserror::Error;
 use tokio::time;
+
+use crate::providers::openai::{OpenAIMonitor, OpenAISubscriptionResponse, OpenAIUsageResponse};
 
 #[derive(Debug)]
 pub struct BedrockConfig {
@@ -40,17 +44,29 @@ struct LLMUsage {
     pub prompt_tokens: u64,
     pub completion_tokens: u64,
     pub request_count: u64,
-}
-
-struct OpenAIMonitor {
-    #[allow(dead_code)]
-    api_key: String,
+    pub remaining_balance: Option<f64>,
 }
 
 #[async_trait]
 impl LLMMonitor for OpenAIMonitor {
     async fn get_usage(&self) -> Result<LLMUsage, MonitorError> {
-        Ok(LLMUsage::default())
+        let usage = self.get_usage_data().await?;
+        let subscription = self.get_subscription_data().await?;
+
+        let current_spend = usage.total_usage / 100.0; // Convert cents to dollars
+        let remaining_balance = if subscription.has_payment_method {
+            Some(subscription.hard_limit_usd - current_spend)
+        } else {
+            None // Pay-as-you-go or free tier
+        };
+
+        Ok(LLMUsage {
+            cost_usd: current_spend,
+            prompt_tokens: 0, // You'll need to track these separately
+            completion_tokens: 0,
+            request_count: 0,
+            remaining_balance,
+        })
     }
 }
 
@@ -58,10 +74,12 @@ struct LLMMetrics {
     cost: GaugeVec,
     tokens: GaugeVec,
     requests: GaugeVec,
+    pub total_cost: Gauge,
+    pub remaining_balance: Gauge,
 }
 
 impl LLMMetrics {
-    fn new(registry: &Registry) -> Self {
+    pub fn new(registry: &Registry) -> Self {
         let cost = GaugeVec::new(
             opts!("llm_cost_usd", "Cost of LLM API usage in USD"),
             &["provider", "model"],
@@ -80,14 +98,31 @@ impl LLMMetrics {
         )
         .unwrap();
 
+        // Add these new metrics
+        let total_cost = Gauge::new(
+            "llm_total_cost_usd",
+            "Total accumulated cost across all providers",
+        )
+        .unwrap();
+
+        let remaining_balance =
+            Gauge::new("llm_remaining_balance_usd", "Remaining budget balance").unwrap();
+
+        // Register all metrics
         registry.register(Box::new(cost.clone())).unwrap();
         registry.register(Box::new(tokens.clone())).unwrap();
         registry.register(Box::new(requests.clone())).unwrap();
+        registry.register(Box::new(total_cost.clone())).unwrap();
+        registry
+            .register(Box::new(remaining_balance.clone()))
+            .unwrap();
 
         Self {
             cost,
             tokens,
             requests,
+            total_cost,
+            remaining_balance,
         }
     }
 
@@ -104,6 +139,12 @@ impl LLMMetrics {
         self.requests
             .with_label_values(&[provider, model])
             .set(usage.request_count as f64);
+
+        self.total_cost.inc_by(usage.cost_usd);
+
+        if let Some(balance) = usage.remaining_balance {
+            self.remaining_balance.set(balance);
+        }
     }
 }
 
