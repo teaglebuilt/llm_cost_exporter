@@ -3,10 +3,14 @@ use async_trait::async_trait;
 use aws_credential_types::Credentials;
 use aws_sdk_sts::Client as StsClient;
 use prometheus::{opts, Encoder, GaugeVec, Registry, TextEncoder};
+use serde::ser::Serialize;
+use serde_json::Value;
+use std::fs;
 use std::time::Duration;
 use std::time::UNIX_EPOCH;
 use thiserror::Error;
 use tokio::time;
+use yaml_rust::YamlLoader;
 
 #[derive(Debug)]
 pub struct BedrockConfig {
@@ -189,27 +193,42 @@ async fn create_bedrock_client(
     }
 }
 
+// fn load_config(filename: &str) -> Result<Value, ()> {
+//     let config = fs::read_to_string(filename).unwrap();
+//     match YamlLoader::load_from_str(&config) {
+//         Ok(mut yaml) => {
+//             if yaml.is_empty() {
+//                 return Err(());
+//             }
+//             Ok(Value::serialize(&Some(yaml.pop().unwrap())).expect("serialization error"))
+//         }
+//         Err(_) => {
+//             return Err(());
+//         }
+//     }
+// }
+
 #[tokio::main]
 async fn main() -> Result<(), MonitorError> {
     let api_key = std::env::var("OPENAI_API_KEY").context("OPENAI_API_KEY not set")?;
     let openai_monitor = OpenAIMonitor { api_key: api_key };
 
-    let bedrock_config = BedrockConfig {
-        assume_role: AssumeRoleConfig {
-            enabled: false,
-            role_arn: "".to_string(),
-            session_name: "".to_string(),
-        },
-    };
+    // let bedrock_config = BedrockConfig {
+    //     assume_role: AssumeRoleConfig {
+    //         enabled: false,
+    //         role_arn: "".to_string(),
+    //         session_name: "".to_string(),
+    //     },
+    // };
 
-    let bedrock_monitor = BedrockMonitor {
-        client: create_bedrock_client(&bedrock_config).await?,
-    };
+    // let bedrock_monitor = BedrockMonitor {
+    //     client: create_bedrock_client(&bedrock_config).await?,
+    // };
 
-    let claude_monitor = ClaudeMonitor {
-        api_key: std::env::var("ANTHROPIC_API_KEY")
-            .map_err(|e| MonitorError::ConfigError(anyhow!("ANTHROPIC_API_KEY not set: {}", e)))?,
-    };
+    // let claude_monitor = ClaudeMonitor {
+    //     api_key: std::env::var("ANTHROPIC_API_KEY")
+    //         .map_err(|e| MonitorError::ConfigError(anyhow!("ANTHROPIC_API_KEY not set: {}", e)))?,
+    // };
 
     let registry = Registry::new();
     let metrics = LLMMetrics::new(&registry);
@@ -229,11 +248,11 @@ async fn main() -> Result<(), MonitorError> {
         if let Ok(usage) = openai_monitor.get_usage().await {
             metrics.update("openai", "gpt-4", &usage);
         }
-        if let Ok(usage) = bedrock_monitor.get_usage().await {
-            metrics.update("bedrock", "claude-2", &usage);
-        }
-        if let Ok(usage) = claude_monitor.get_usage().await {
-            metrics.update("anthropic", "claude-2", &usage);
-        }
+        // if let Ok(usage) = bedrock_monitor.get_usage().await {
+        //     metrics.update("bedrock", "claude-2", &usage);
+        // }
+        // if let Ok(usage) = claude_monitor.get_usage().await {
+        //     metrics.update("anthropic", "claude-2", &usage);
+        // }
     }
 }

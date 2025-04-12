@@ -1,1 +1,6 @@
 target
+
+.envrc
+.env
+
+.tool-versions
