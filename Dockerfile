@@ -1,4 +1,4 @@
-FROM rust:1.70-slim-bullseye as builder
+FROM rust:1.86-slim-bookworm as builder
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -22,7 +22,7 @@ RUN cargo build --release && \
     cargo install --path . && \
     rm -rf target/release/deps/llm_cost_exporter*
 
-FROM debian:bullseye-slim
+FROM debian:bookworm-slim
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
