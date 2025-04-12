@@ -1,0 +1,12 @@
+{
+  "[rust]": {
+    "editor.formatOnSave": true,
+  },
+  "editor.semanticTokenColorCustomizations": {
+    "rules": {
+      "*.mutable": {
+        "fontStyle": "",
+      },
+    }
+  }
+}
