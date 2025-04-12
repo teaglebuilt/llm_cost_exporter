@@ -1,3 +1,7 @@
+use serde::Deserialize;
+
+use crate::MonitorError;
+
 pub struct OpenAIMonitor {
     pub api_key: String,
 }

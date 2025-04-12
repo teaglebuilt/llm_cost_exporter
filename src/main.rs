@@ -7,7 +7,7 @@ use std::time::Duration;
 use thiserror::Error;
 use tokio::time;
 
-use crate::providers::openai::{OpenAIMonitor, OpenAISubscriptionResponse, OpenAIUsageResponse};
+use crate::providers::openai::OpenAIMonitor;
 
 #[derive(Debug)]
 pub struct BedrockConfig {
@@ -140,7 +140,7 @@ impl LLMMetrics {
             .with_label_values(&[provider, model])
             .set(usage.request_count as f64);
 
-        self.total_cost.inc_by(usage.cost_usd);
+        self.total_cost.add(usage.cost_usd);
 
         if let Some(balance) = usage.remaining_balance {
             self.remaining_balance.set(balance);
