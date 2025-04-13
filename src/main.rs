@@ -53,19 +53,16 @@ impl LLMMonitor for OpenAIMonitor {
         let usage = self.get_usage_data().await?;
         let subscription = self.get_subscription_data().await?;
 
-        let current_spend = usage.total_usage / 100.0; // Convert cents to dollars
-        let remaining_balance = if subscription.has_payment_method {
-            Some(subscription.hard_limit_usd - current_spend)
-        } else {
-            None // Pay-as-you-go or free tier
-        };
-
         Ok(LLMUsage {
-            cost_usd: current_spend,
+            cost_usd: usage.total_usage / 100.0,
             prompt_tokens: 0, // You'll need to track these separately
             completion_tokens: 0,
             request_count: 0,
-            remaining_balance,
+            remaining_balance: if subscription.has_payment_method {
+                Some(subscription.hard_limit_usd - (usage.total_usage / 100.0))
+            } else {
+                None
+            },
         })
     }
 }

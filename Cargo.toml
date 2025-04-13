@@ -18,3 +18,8 @@ thiserror = "1.0"
 anyhow = "1.0"
 warp = "0.3.7"
 yaml-rust = "0.4.5"
+
+[dev-dependencies]
+mockito = "1.1"
+serde_json = "1.0"
+tokio = { version = "1.0", features = ["full"] }
